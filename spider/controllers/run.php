@@ -20,6 +20,14 @@ class Welcome extends CI_Controller {
 	 */
 	public function index()
 	{
-		$this->load->view('welcome_message');
+
+	}
+
+	/**
+	 * [getUrls 获取目标列表地址]
+	 * @return [type] [description]
+	 */
+	public function getUrls() {
+
 	}
 }
