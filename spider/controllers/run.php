@@ -13,7 +13,7 @@ class Run extends MY_Controller {
 		$page = 1;
 
 		$this->load->model('spidermodel');
-		$this->spidermodel->getUrls($projectId, $page);
+		$this->spidermodel->runUrls($projectId, $page);
 	}
 
 	/**
@@ -23,7 +23,7 @@ class Run extends MY_Controller {
 	public function content() {
 		$projectId = 1;
 		$this->load->model('spidermodel');
-		$this->spidermodel->getContent($projectId);
+		$this->spidermodel->runContent($projectId);
 	}
 
 }
