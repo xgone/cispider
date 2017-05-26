@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class spidermodel extends MY_Model {
+class SpiderModel extends MY_Model {
 
   const TBL_URLS = 'urls';        //URL 表
   const TBL_CONTENT = 'content';  //内容表
