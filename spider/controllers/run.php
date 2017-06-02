@@ -26,4 +26,20 @@ class Run extends MY_Controller {
 		$this->spidermodel->runContent($projectId);
 	}
 
+	/**
+	 * 采集内容
+	 * @return [type] [description]
+	 */
+	public function import() {
+		$projectId = 1;
+		$this->load->model('importmodel');
+		$this->importmodel->importContent($projectId);
+	}
+
+	public function importImage() {
+		$projectId = 1;
+		$this->load->model('importmodel');
+		$this->importmodel->importImage($projectId);
+	}
+
 }

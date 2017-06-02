@@ -75,6 +75,8 @@ class SpiderModel extends MY_Model {
       //获取标题
       $pregRes = preg_match($titleRegExp, $html, $pregHtml);
       $title = trim($pregHtml[1]);
+      $title = str_replace('[图]', '', $title);
+      $title = str_replace('[视频]', '', $title);
 
       //获取正文内容
       $pregRes = preg_match($contentRegExp, $html, $pregHtml);
@@ -88,6 +90,11 @@ class SpiderModel extends MY_Model {
       $content = preg_replace('/<p(.*?)>/', '', $content);
 
       $content = trim($content);
+
+      if(empty($title) || empty($content)) {
+        echo "{$v['id']}->采集内容or标题失败\n";
+        continue;
+      }
 
       //添加到内容库
       $res = $this->addContent($v['id'], $v['cate_id'], $title, $content, $projectId);

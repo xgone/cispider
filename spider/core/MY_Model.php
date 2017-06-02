@@ -21,6 +21,13 @@ class MY_Model extends CI_Model {
    					$dbSlaveCount = 1;
    					$conn = $this->load->database("slave{$dbSlaveCount}", TRUE);
    					break;
+					case 'web_master':
+   					$conn = $this->load->database("web_master", TRUE);
+   					break;
+   				case 'web_slave':
+   					$dbSlaveCount = 1;
+   					$conn = $this->load->database("web_slave{$dbSlaveCount}", TRUE);
+   					break;
    				default:
    					return parent::__get($key);
    			}

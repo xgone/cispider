@@ -6,7 +6,15 @@ namespace Composer\Autoload;
 
 class ComposerStaticInitd187afbfe0cd4951b3295ebac9763ce8
 {
+    public static $files = array (
+        '841780ea2e1d6545ea3a253239d59c05' => __DIR__ . '/..' . '/qiniu/php-sdk/src/Qiniu/functions.php',
+    );
+
     public static $prefixLengthsPsr4 = array (
+        'Q' => 
+        array (
+            'Qiniu\\' => 6,
+        ),
         'L' => 
         array (
             'League\\HTMLToMarkdown\\' => 22,
@@ -14,6 +22,10 @@ class ComposerStaticInitd187afbfe0cd4951b3295ebac9763ce8
     );
 
     public static $prefixDirsPsr4 = array (
+        'Qiniu\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/qiniu/php-sdk/src/Qiniu',
+        ),
         'League\\HTMLToMarkdown\\' => 
         array (
             0 => __DIR__ . '/..' . '/league/html-to-markdown/src',

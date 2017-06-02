@@ -1,5 +1,6 @@
 {
     "require": {
-        "league/html-to-markdown": "^4.4"
+        "league/html-to-markdown": "^4.4",
+        "qiniu/php-sdk": "^7.1"
     }
 }
