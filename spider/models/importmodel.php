@@ -3,6 +3,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class importModel extends MY_Model {
 
+  const IMG_DOMAIN = 'http://p1.jidan8.com/';
   const TBL_CONTENT = 'content';                  //采集内容表
   const TBL_WEB_CONTENTS = 'contents';            //web项目内容表
   const TBL_WEB_RELATIONSHIPS = 'relationships';  //web项目关联表
@@ -30,8 +31,10 @@ class importModel extends MY_Model {
 
       $insertId = $this->addWebContent($value['cate_id'], $value['title'], $content);
 
-      print_r($value);
-      var_dump($content,$insertId);exit;
+      if(!empty($insertId)) {
+        $this->updateSpiderContent($value['id'], array('status' => 2, 'import_time' => time(), 'import_id' => $insertId));
+        echo "文章ID:{$insertId},导入完成\n";
+      }
     }
   }
 
@@ -41,8 +44,39 @@ class importModel extends MY_Model {
    * @param  integer $limit     [description]
    * @return [type]             [description]
    */
-  public function importImage($projectId, $limit = 5) {
-    $this->uploadFile();
+  public function importImage($projectId, $limit = 10) {
+
+    //获取采集内容
+    $list = $this->getSpiderContent($projectId, $limit, 1);
+
+    foreach ($list as $key => $value) {
+      echo "内容ID:{$value['id']}=>开始处理:\n";
+      $content = $value['content'];
+      //分析内容图片
+      //分析内容图片
+      $html = preg_match_all('/<img.*?src=\"(.*?)\".*?\/>/', $value['content'], $match);
+
+      $replace = array();
+      echo " 开始下载图片:\n";
+      foreach ($match[1] as $k => $v) {
+        $filePath = $this->downFile($v);
+
+        if(!empty($filePath)) {
+          $uploadRes = $this->uploadFile($filePath);
+          if(empty($uploadRes['key'])) continue;
+          $filePath = '';
+          $replace[] = self::IMG_DOMAIN.$uploadRes['key'];
+          echo "  下载成功=>{$v}=>".self::IMG_DOMAIN."{$uploadRes['key']}\n";
+        } else {
+          echo "  下载失败=>{$filePath}\n";
+        }
+      }
+
+      //替换图片路径
+      $content = str_replace($match[1], $replace, $value['content']);
+      $this->updateSpiderContent($value['id'], array('content' => $content, 'img_status' => 2));
+      echo "处理完成\n";
+    }
   }
 
   /**
@@ -51,11 +85,11 @@ class importModel extends MY_Model {
    * @param  [type] $limit     [description]
    * @return [type]            [description]
    */
-  private function getSpiderContent($projectId, $limit) {
+  private function getSpiderContent($projectId, $limit, $imgStatus = 2) {
     $where = array(
       'project_id'  => $projectId,
       'status'      => 1,
-      'img_status'  => 2,
+      'img_status'  => $imgStatus,
     );
     $list = $this->master->select('id,cate_id,title,content')
       ->where($where)
@@ -65,6 +99,11 @@ class importModel extends MY_Model {
       ->result_array();
 
       return $list;
+  }
+
+  private function updateSpiderContent($id, $data) {
+    $this->master->where('id', $id)->update(self::TBL_CONTENT, $data);
+    return $this->master->affected_rows();
   }
 
   /**
@@ -112,7 +151,26 @@ class importModel extends MY_Model {
     return $insertId;
   }
 
-  private function uploadFile() {
+  private function downFile($fileUrl) {
+    //缓存路径
+    $fileName = pathinfo($fileUrl);
+
+    $savePath = '/tmp/img';
+    $saveTo = "{$savePath}/{$fileName['basename']}";
+    $fileContent = get($fileUrl);
+    //$cmd = "wget -nv --tries=2 {$imgList[$k]['src']} -O {$imgSaveFile}";
+		//exec( $cmd, $output, $ret );
+    $downloadedFile = fopen($saveTo, 'w');
+    fwrite($downloadedFile, $fileContent);
+	  fclose($downloadedFile);
+    if(file_exists($saveTo)) {
+      return $saveTo;
+    } else {
+      return '';
+    }
+  }
+
+  private function uploadFile($filePath) {
 
     $accessKey = 'um3DKzr0CaF0jPJF3jgvBZ6huUYC2HyZJ0xm90Mr';
     $secretKey = '2bAxDc-Jjca7FpHGuhb5K70GSoCMJqHsBpo0rO3Y';
@@ -125,17 +183,21 @@ class importModel extends MY_Model {
     // 构建 UploadManager 对象
     $uploadMgr = new Qiniu\Storage\UploadManager();
     // 要上传文件的本地路径
-    $filePath = '/tmp/1.jpg';
+    //$filePath = '/tmp/1.jpg';
     // 上传到七牛后保存的文件名
-    $key = '1.jpg';
+    $year = date('Y');
+    $day = date('md');
+    $path = pathinfo($filePath);
+    $key = "{$year}/{$day}/".mt_rand().'.'.$path['extension'];
 
     // 调用 UploadManager 的 putFile 方法进行文件的上传
     list($ret, $err) = $uploadMgr->putFile($token, $key, $filePath);
-    echo "\n====> putFile result: \n";
+    //echo "\n====> putFile result: \n";
     if ($err !== null) {
         var_dump($err);
     } else {
-        var_dump($ret);
+        unlink($filePath);
+        return $ret;
     }
   }
 }

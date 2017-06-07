@@ -3,6 +3,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class SpiderModel extends MY_Model {
 
+  const TBL_PROJECT = 'project';  //项目信息
   const TBL_URLS = 'urls';        //URL 表
   const TBL_CONTENT = 'content';  //内容表
 
@@ -19,9 +20,9 @@ class SpiderModel extends MY_Model {
   public function runUrls($projectId, $page) {
 
     //获取项目类型数据
-    $type = 2;
+    $project = $this->getSpiderProject($projectId);
 
-    switch ($type) {
+    switch ($project['type']) {
 			case 1:
 					$startAreaHtml = '';
 					$endAreaHtml = '';
@@ -33,9 +34,10 @@ class SpiderModel extends MY_Model {
 			case 2:
           $options = array(
               CURLOPT_USERAGENT => "Mozilla/5.0 (compatible; haosouSpider/1.0; +http://www.haosou.com)",
-              CURLOPT_REFERER		=> 'http://www.cnbeta.com/',
+              CURLOPT_REFERER		=> $project['referer'],
           );
-          $startUrl = "http://www.cnbeta.com/home/more?&type=catid|7&page={$page}";
+
+          $startUrl = str_replace('{page}', $page, $project['base_url']);
 
 					$html = json_decode(get($startUrl, array(), $options), TRUE);
 
@@ -43,7 +45,8 @@ class SpiderModel extends MY_Model {
           $insertData = array();
           if(!empty($data)) {
             foreach ($data as $k => $v) {
-              $this->addUrls($v['url_show'], $v['title'], $projectId);
+              $this->addUrls($v['url_show'], $v['title'], $projectId, $project['cate_id']);
+              echo "URL:{$v['url_show']}=>完成\n";
             }
           }
 				break;
@@ -57,7 +60,7 @@ class SpiderModel extends MY_Model {
    * 采集正文内容
    * @return [type] [description]
    */
-  public function runContent($projectId) {
+  public function runContent($projectId, $limit = 10) {
     echo "开始采集内容,项目ID->{$projectId}\n";
     //获取对象内容采集规则
     $titleRegExp = '/<h1>(.*?)<\/h1>/';  //标题正则
@@ -65,7 +68,7 @@ class SpiderModel extends MY_Model {
     $contentRegExp = '/<div class=\"article-summary\">(.*?)<div class=\"tac\">/';   //内容正则
     $contentReplaceExp = '/<div class=\"topic\">(.*?)<\/div>/';                     //排除正则
     //获取待采集url
-    $urls = $this->getUrls($projectId, 5);
+    $urls = $this->getUrls($projectId, $limit);
 
     foreach ($urls as $k => $v) {
       //获取该url html 内容
@@ -80,6 +83,7 @@ class SpiderModel extends MY_Model {
 
       //获取正文内容
       $pregRes = preg_match($contentRegExp, $html, $pregHtml);
+
       //过滤特殊字符
       $content = trim($pregHtml[1]);
 
@@ -87,7 +91,8 @@ class SpiderModel extends MY_Model {
       $content = preg_replace($contentReplaceExp, '', $content);
 
       $content = strip_tags($content, '<p><br><img>');
-      $content = preg_replace('/<p(.*?)>/', '', $content);
+
+      $content = preg_replace('/<p(.*?)>/', '<p>', $content);
 
       $content = trim($content);
 
@@ -105,6 +110,17 @@ class SpiderModel extends MY_Model {
         echo "{$v['id']}->采集内容完成\n";
       }
     }
+  }
+
+  public function getSpiderProject($id) {
+    $where = array(
+      'id'  => $id,
+    );
+    $data = $this->master->select('id,name,base_url,cate_id,type,domain,referer,encoding')
+      ->where($where)
+      ->get(self::TBL_PROJECT)
+      ->row_array();
+    return $data;
   }
 
   /**
@@ -135,9 +151,10 @@ class SpiderModel extends MY_Model {
    * @param [type]  $title     [description]
    * @param integer $projectId [description]
    */
-  private function addUrls($url, $title, $projectId = 1) {
+  private function addUrls($url, $title, $projectId = 1, $cateId = 1) {
     $data = array(
       'project_id'  => $projectId,
+      'cate_id'     => $cateId,
       'url'         => trim($url),
       'title'       => strip_tags($title),
       'create_time' => time()

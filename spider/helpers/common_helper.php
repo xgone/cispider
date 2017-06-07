@@ -15,8 +15,8 @@ function get($url, array $get = array(), array $options = array()) {
   $defaults = array(
     CURLOPT_URL 			=> $url . (strpos($url, '?') === FALSE ? '?' : '') . http_build_query($get, '', '&'),
     //CURLOPT_URL 			=> '',
-    CURLOPT_TIMEOUT 		=> 5,
-    CURLOPT_CONNECTTIMEOUT	=> 5,
+    CURLOPT_TIMEOUT 		=> 10,
+    CURLOPT_CONNECTTIMEOUT	=> 10,
     CURLOPT_HEADER 			=> 0,
     CURLOPT_RETURNTRANSFER	=> TRUE,
     //CURLOPT_REFERER			=> $referer,
