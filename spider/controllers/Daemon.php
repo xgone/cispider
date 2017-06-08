@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Run extends MY_Controller {
+class Daemon extends MY_Controller {
 
 	/**
 	 * 开始
