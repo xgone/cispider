@@ -45,7 +45,10 @@ class SpiderModel extends MY_Model {
           $insertData = array();
           if(!empty($data)) {
             foreach ($data as $k => $v) {
-              $this->addUrls($v['url_show'], $v['title'], $projectId, $project['cate_id']);
+              $insertRes = $this->addUrls($v['url_show'], $v['title'], $projectId, $project['cate_id']);
+              if($insertRes == FALSE) {
+                echo "URL:{$v['url_show']}=>URL重复,跳过\n";
+              }
               echo "URL:{$v['url_show']}=>完成\n";
             }
           }
@@ -152,6 +155,13 @@ class SpiderModel extends MY_Model {
    * @param integer $projectId [description]
    */
   private function addUrls($url, $title, $projectId = 1, $cateId = 1) {
+
+    //检查url是否已经存在
+    $query = $this->master->select('url')->where('url', $url)->get(self::TBL_URLS)->row_array();
+    
+    if(!empty($query)) {
+      return FALSE;
+    }
     $data = array(
       'project_id'  => $projectId,
       'cate_id'     => $cateId,
