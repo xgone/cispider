@@ -3,10 +3,11 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class importModel extends MY_Model {
 
-  const IMG_DOMAIN = 'http://p1.jidan8.com/';
+  const IMG_DOMAIN = 'http://img.baidu.com/';
   const TBL_CONTENT = 'content';                  //采集内容表
   const TBL_WEB_CONTENTS = 'contents';            //web项目内容表
   const TBL_WEB_RELATIONSHIPS = 'relationships';  //web项目关联表
+  const TBL_WEB_METAS = 'metas';                  //分类信息
 
   public function __construct() {
     parent::__construct();
@@ -33,7 +34,12 @@ class importModel extends MY_Model {
 
       if(!empty($insertId)) {
         $this->updateSpiderContent($value['id'], array('status' => 2, 'import_time' => time(), 'import_id' => $insertId));
-        echo "文章ID:{$insertId},导入完成\n";
+
+        //拼接完整url
+        $cateInfo = $this->getCateInfo($value['cate_id']);
+        $url = "http://www.m123.me/{$cateInfo['slug']}/{$insertId}.html";
+        $baiduRes = $this->postToBaidu($url);
+        echo "文章ID:{$insertId},导入完成=>{$baiduRes}\n";
       }
     }
   }
@@ -172,12 +178,12 @@ class importModel extends MY_Model {
 
   private function uploadFile($filePath) {
 
-    $accessKey = 'um3DKzr0CaF0jPJF3jgvBZ6huUYC2HyZJ0xm90Mr';
-    $secretKey = '2bAxDc-Jjca7FpHGuhb5K70GSoCMJqHsBpo0rO3Y';
+    $accessKey = '123';
+    $secretKey = '456';
     $auth = new Qiniu\Auth($accessKey, $secretKey);
 
     // 空间名  https://developer.qiniu.io/kodo/manual/concepts
-    $bucket = 'm123-01';
+    $bucket = 'bucket';
     // 生成上传Token
     $token = $auth->uploadToken($bucket);
     // 构建 UploadManager 对象
@@ -199,5 +205,31 @@ class importModel extends MY_Model {
         unlink($filePath);
         return $ret;
     }
+  }
+
+  public function getCateInfo($cateId) {
+    $cateInfo = $this->web_master->select('mid,name,slug,type')->where('mid', $cateId)
+    ->get(self::TBL_WEB_METAS)->row_array();
+
+    return $cateInfo;
+  }
+
+  //提交到百度
+  private function postToBaidu($url) {
+    $urls = array(
+      $url,
+    );
+    $api = 'http://data.zz.baidu.com/urls?site=www.baidu.com&token=xxxxx';
+    $ch = curl_init();
+    $options =  array(
+        CURLOPT_URL => $api,
+        CURLOPT_POST => true,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POSTFIELDS => implode("\n", $urls),
+        CURLOPT_HTTPHEADER => array('Content-Type: text/plain'),
+    );
+    curl_setopt_array($ch, $options);
+    $result = curl_exec($ch);
+    echo $result;
   }
 }
