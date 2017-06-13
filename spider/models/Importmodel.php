@@ -37,7 +37,7 @@ class importModel extends MY_Model {
 
         //拼接完整url
         $cateInfo = $this->getCateInfo($value['cate_id']);
-        $url = "http://www.m123.me/{$cateInfo['slug']}/{$insertId}.html";
+        $url = "http://www.xxx.me/{$cateInfo['slug']}/{$insertId}.html";
         $baiduRes = $this->postToBaidu($url);
         echo "文章ID:{$insertId},导入完成=>{$baiduRes}\n";
       }
