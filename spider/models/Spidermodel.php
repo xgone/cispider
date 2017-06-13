@@ -68,8 +68,12 @@ class SpiderModel extends MY_Model {
     //获取对象内容采集规则
     $titleRegExp = '/<h1>(.*?)<\/h1>/';  //标题正则
     $titleReplaceExp = '//';            //标题排除
-    $contentRegExp = '/<div class=\"article-summary\">(.*?)<div class=\"tac\">/';   //内容正则
-    $contentReplaceExp = '/<div class=\"topic\">(.*?)<\/div>/';                     //排除正则
+    $contentRegExp = '/<div class=\"article-summary\">(.*?)<div class=\"tac\">/';   //匹配内容
+    //排除内容
+    $contentReplaceExp = array(
+      '/<div class=\"article-relation\">(.*?)<\/div>/',
+      '/<div class=\"topic\">(.*?)<\/div>/'
+    );
     //获取待采集url
     $urls = $this->getUrls($projectId, $limit);
 
@@ -93,10 +97,13 @@ class SpiderModel extends MY_Model {
       //过滤指定区域标签
       $content = preg_replace($contentReplaceExp, '', $content);
 
-      $content = strip_tags($content, '<p><br><img>');
+      $content = strip_tags($content, '<p><br><img><embed>');
 
       $content = preg_replace('/<p(.*?)>/', '<p>', $content);
 
+      //处理视频数据
+      $content = preg_replace('/<embed.*?src=\"http:\/\/player\.youku\.com\/player\.php\/sid\/(.*?)\/v\.swf\".*?\/>/', "<iframe height=498 width=510 src='http://player.youku.com/embed/$1' frameborder=0 'allowfullscreen'></iframe>",$content);
+      //print_r($content);exit;
       $content = trim($content);
 
       if(empty($title) || empty($content)) {
@@ -158,7 +165,7 @@ class SpiderModel extends MY_Model {
 
     //检查url是否已经存在
     $query = $this->master->select('url')->where('url', $url)->get(self::TBL_URLS)->row_array();
-    
+
     if(!empty($query)) {
       return FALSE;
     }
